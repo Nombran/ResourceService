@@ -1,0 +1,22 @@
+server:
+  port: 8089
+security:
+  basic:
+    enable: false
+aws:
+  region: us-east-1
+  s3:
+    bucket: resources
+    endpoint: http://127.0.0.1:4566
+spring:
+  datasource:
+    url:
+    username:
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB

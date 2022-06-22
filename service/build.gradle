@@ -1,0 +1,18 @@
+bootRun {
+    enabled = false
+}
+
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
+}
+
+dependencies {
+    implementation project(':repository')
+    api 'com.amazonaws:aws-java-sdk:1.12.238'
+    implementation 'commons-io:commons-io:2.11.0'
+    implementation 'com.googlecode.soundlibs:mp3spi:1.9.5-1'
+}

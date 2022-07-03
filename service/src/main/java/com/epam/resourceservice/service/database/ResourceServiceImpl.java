@@ -4,10 +4,14 @@ import com.epam.resourceservice.dto.MultipleResourceDto;
 import com.epam.resourceservice.exception.NotMp3FileException;
 import com.epam.resourceservice.exception.ResourceNotFoundException;
 import com.epam.resourceservice.model.Resource;
+import com.epam.resourceservice.publisher.RMQPublisher;
 import com.epam.resourceservice.repository.ResourceRepository;
+import com.epam.resourceservice.service.SongService;
 import com.epam.resourceservice.service.s3.FileUploadService;
+import com.epam.songservice.dto.SongMetadataDto;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,12 +24,15 @@ import static com.amazonaws.services.mediaconvert.model.AudioCodec.MP3;
 /**
  * @author www.epam.com
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResourceServiceImpl implements ResourceService {
 
     private final FileUploadService fileUploadService;
     private final ResourceRepository repository;
+    private final RMQPublisher publisher;
+    private final SongService songService;
 
     public int upload(MultipartFile resource) {
         if(!validateIfMp3(resource)) {
@@ -34,7 +41,9 @@ public class ResourceServiceImpl implements ResourceService {
         var filePath = fileUploadService.uploadFile(resource);
         var resourceEntity = new Resource();
         resourceEntity.setLocation(filePath);
-        return repository.save(resourceEntity).getId();
+        var resourceId = repository.save(resourceEntity).getId();
+        publisher.publishCreationEvent(resourceId.toString());
+        return resourceId;
     }
 
     @SneakyThrows
@@ -51,8 +60,16 @@ public class ResourceServiceImpl implements ResourceService {
         resources.forEach(this::deleteResource);
         var response = new MultipleResourceDto();
         response.setIds(resources.stream().map(Resource::getId).toList());
+        publisher.publishDeleteEvent(response.getIds().toString());
         return response;
     }
+
+    public SongMetadataDto findSongMetadata(int resourceId) {
+        return repository.findById(resourceId)
+                .map(resource -> songService.findSongMetadata(resourceId))
+                .orElseThrow(() -> new ResourceNotFoundException("Resource with id = " + resourceId + " doesn't exist"));
+    }
+
 
     private void deleteResource(final Resource resource) {
         repository.delete(resource);

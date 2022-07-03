@@ -1,5 +1,5 @@
 server:
-  port: 8089
+  port: 8087
 security:
   basic:
     enable: false
@@ -10,9 +10,19 @@ aws:
     endpoint: http://127.0.0.1:4566
 spring:
   datasource:
-    url:
+    url: jdbc:postgresql://localhost:5432/resources
     username:
     password:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    queue:
+      create: Resources.Create
+      create_dead: Resources.Create.Dead
+      delete: Resources.Delete
+      delete_dead: Resources.Delete.Dead
   jpa:
     hibernate:
       ddl-auto: update
@@ -20,3 +30,10 @@ spring:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
+song:
+  service:
+    connect:
+      timeout: 2000
+    read:
+      timeout: 2000
+    baseUrl: http://localhost:8088/songs
